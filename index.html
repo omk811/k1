@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لعبة الأفعال والحروف الناسخة</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;900&display=swap');
+
+  :root {
+    --verb-color: #1a6b3c;
+    --verb-light: #e8f5ee;
+    --verb-glow: #2ecc71;
+    --particle-color: #7b1fa2;
+    --particle-light: #f3e5f5;
+    --particle-glow: #ab47bc;
+    --bg: #0d1b2a;
+    --card-bg: #162335;
+    --text: #e8f0fe;
+    --gold: #f4d03f;
+    --wrong: #e74c3c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(30, 107, 60, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(123, 31, 162, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(244, 208, 63, 0.05) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  header {
+    text-align: center;
+    padding: 30px 20px 20px;
+    position: relative;
+  }
+
+  .title-main {
+    font-family: 'Amiri', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), #f0a500, var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .title-sub {
+    font-size: 1rem;
+    color: #8899bb;
+    font-weight: 400;
+  }
+
+  /* Score bar */
+  .score-bar {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 12px 20px;
+    margin: 0 auto 20px;
+    max-width: 700px;
+  }
+
+  .score-pill {
+    background: var(--card-bg);
+    border: 1px solid #2a3d5a;
+    border-radius: 50px;
+    padding: 8px 22px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .score-pill span { font-size: 1.1rem; font-weight: 700; }
+  .score-pill .verb-s { color: var(--verb-glow); }
+  .score-pill .particle-s { color: var(--particle-glow); }
+  .score-pill .total-s { color: var(--gold); }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0 auto 28px;
+    max-width: 700px;
+    padding: 0 20px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 10px 18px;
+    border: 2px solid;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .legend-item.verb { border-color: var(--verb-color); color: var(--verb-glow); }
+  .legend-item.particle { border-color: var(--particle-color); color: var(--particle-glow); }
+
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+  .verb .legend-dot { background: var(--verb-glow); }
+  .particle .legend-dot { background: var(--particle-glow); }
+
+  /* Reference table toggle */
+  .ref-toggle {
+    display: block;
+    margin: 0 auto 16px;
+    background: transparent;
+    border: 1px solid #2a3d5a;
+    color: #8899bb;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .ref-toggle:hover { border-color: var(--gold); color: var(--gold); }
+
+  .ref-table {
+    display: none;
+    max-width: 700px;
+    margin: 0 auto 20px;
+    background: var(--card-bg);
+    border: 1px solid #2a3d5a;
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 16px;
+  }
+  .ref-table.open { display: block; }
+
+  .ref-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .ref-col h4 {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid;
+    text-align: center;
+  }
+  .ref-col.v h4 { color: var(--verb-glow); border-color: var(--verb-color); }
+  .ref-col.p h4 { color: var(--particle-glow); border-color: var(--particle-color); }
+
+  .ref-col .words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .ref-word {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-family: 'Amiri', serif;
+  }
+  .ref-col.v .ref-word { background: var(--verb-light); color: var(--verb-color); }
+  .ref-col.p .ref-word { background: var(--particle-light); color: var(--particle-color); }
+
+  /* Game area */
+  .game-container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
+  }
+
+  /* MODE SELECTOR */
+  .mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .mode-btn {
+    background: var(--card-bg);
+    border: 2px solid #2a3d5a;
+    color: #8899bb;
+    padding: 8px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.85rem;
+    transition: all 0.25s;
+    font-weight: 600;
+  }
+  .mode-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(244,208,63,0.08);
+  }
+
+  /* ============ MODE 1: Classify ============ */
+  .classify-game { display: none; }
+  .classify-game.active { display: block; }
+
+  .question-card {
+    background: var(--card-bg);
+    border: 2px solid #2a3d5a;
+    border-radius: 20px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .question-label {
+    font-size: 0.8rem;
+    color: #8899bb;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .question-word {
+    font-family: 'Amiri', serif;
+    font-size: clamp(2.2rem, 8vw, 4rem);
+    font-weight: 700;
+    color: var(--text);
+    margin: 8px 0;
+    transition: transform 0.3s;
+  }
+
+  .question-sentence {
+    font-size: 0.88rem;
+    color: #6a7d99;
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  .highlight { color: var(--gold); font-style: normal; font-weight: 700; }
+
+  .choice-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 6px;
+  }
+
+  .choice-btn {
+    padding: 16px 10px;
+    border-radius: 16px;
+    border: 2px solid;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .choice-btn.verb {
+    background: var(--verb-light);
+    border-color: var(--verb-color);
+    color: var(--verb-color);
+  }
+  .choice-btn.verb:hover {
+    background: var(--verb-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46,204,113,0.3);
+  }
+
+  .choice-btn.particle {
+    background: var(--particle-light);
+    border-color: var(--particle-color);
+    color: var(--particle-color);
+  }
+  .choice-btn.particle:hover {
+    background: var(--particle-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(171,71,188,0.3);
+  }
+
+  .choice-btn:disabled { cursor: default; transform: none !important; }
+  .choice-btn.correct-ans { animation: pulse-correct 0.5s ease; }
+  .choice-btn.wrong-ans { animation: shake 0.4s ease; }
+
+  @keyframes pulse-correct {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .feedback-msg {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    height: 36px;
+    line-height: 36px;
+    margin: 12px 0;
+    transition: opacity 0.3s;
+  }
+  .feedback-msg.correct { color: var(--verb-glow); }
+  .feedback-msg.wrong { color: var(--wrong); }
+
+  /* ============ MODE 2: Drag & Drop ============ */
+  .drag-game { display: none; }
+  .drag-game.active { display: block; }
+
+  .drag-instruction {
+    text-align: center;
+    color: #8899bb;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+  }
+
+  .drag-words-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    min-height: 70px;
+    background: var(--card-bg);
+    border: 2px dashed #2a3d5a;
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 20px;
+    transition: border-color 0.2s;
+  }
+  .drag-words-pool.over { border-color: var(--gold); }
+
+  .drag-word {
+    font-family: 'Amiri', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 12px;
+    cursor: grab;
+    background: #1e2f45;
+    border: 2px solid #2a3d5a;
+    color: var(--text);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .drag-word:active { cursor: grabbing; opacity: 0.7; transform: scale(0.96); }
+  .drag-word.dragging { opacity: 0.4; }
+
+  .drag-targets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .drag-target {
+    min-height: 150px;
+    border-radius: 16px;
+    border: 2px dashed;
+    padding: 14px;
+    transition: all 0.2s;
+  }
+  .drag-target.verb-zone {
+    border-color: var(--verb-color);
+    background: rgba(26,107,60,0.06);
+  }
+  .drag-target.particle-zone {
+    border-color: var(--particle-color);
+    background: rgba(123,31,162,0.06);
+  }
+  .drag-target.over {
+    background: rgba(244,208,63,0.08);
+    border-color: var(--gold);
+  }
+
+  .drag-target h3 {
+    text-align: center;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid;
+    font-weight: 700;
+  }
+  .verb-zone h3 { color: var(--verb-glow); border-color: var(--verb-color); }
+  .particle-zone h3 { color: var(--particle-glow); border-color: var(--particle-color); }
+
+  .drag-target .words-inside {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .placed-word {
+    font-family: 'Amiri', serif;
+    font-size: 1.2rem;
+    padding: 5px 14px;
+    border-radius: 10px;
+    cursor: grab;
+    color: white;
+    transition: all 0.2s;
+  }
+  .verb-zone .placed-word { background: var(--verb-color); }
+  .particle-zone .placed-word { background: var(--particle-color); }
+
+  .drag-check-btn {
+    display: block;
+    margin: 16px auto 0;
+    background: linear-gradient(135deg, var(--gold), #f0a500);
+    color: #0d1b2a;
+    border: none;
+    padding: 12px 36px;
+    border-radius: 50px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(244,208,63,0.3);
+  }
+  .drag-check-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(244,208,63,0.4); }
+
+  /* ============ MODE 3: Fill sentence ============ */
+  .fill-game { display: none; }
+  .fill-game.active { display: block; }
+
+  .fill-sentence-card {
+    background: var(--card-bg);
+    border: 2px solid #2a3d5a;
+    border-radius: 20px;
+    padding: 26px 22px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .fill-sentence {
+    font-family: 'Amiri', serif;
+    font-size: clamp(1.3rem, 4vw, 1.9rem);
+    line-height: 2.2;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .fill-blank {
+    display: inline-block;
+    min-width: 80px;
+    border-bottom: 3px solid var(--gold);
+    color: var(--gold);
+    font-weight: 700;
+    padding: 0 6px;
+  }
+
+  .fill-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .fill-opt {
+    font-family: 'Amiri', serif;
+    font-size: 1.2rem;
+    padding: 8px 20px;
+    border-radius: 12px;
+    border: 2px solid #2a3d5a;
+    background: #1e2f45;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 700;
+  }
+  .fill-opt:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .fill-opt.correct { background: var(--verb-color); border-color: var(--verb-glow); color: white; }
+  .fill-opt.wrong { background: var(--wrong); border-color: #c0392b; color: white; }
+  .fill-opt.correct-answer { background: var(--particle-color); border-color: var(--particle-glow); color: white; }
+
+  /* Progress */
+  .progress-bar-wrap {
+    background: #1e2f45;
+    border-radius: 20px;
+    height: 8px;
+    margin: 0 auto 20px;
+    max-width: 700px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--verb-glow), var(--gold), var(--particle-glow));
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+
+  /* Next btn */
+  .next-btn {
+    display: none;
+    margin: 10px auto 0;
+    background: linear-gradient(135deg, var(--gold), #f0a500);
+    color: #0d1b2a;
+    border: none;
+    padding: 11px 32px;
+    border-radius: 50px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .next-btn.show { display: block; }
+  .next-btn:hover { transform: translateY(-2px); }
+
+  /* End screen */
+  .end-screen {
+    display: none;
+    text-align: center;
+    background: var(--card-bg);
+    border: 2px solid var(--gold);
+    border-radius: 24px;
+    padding: 40px 28px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .end-screen.show { display: block; }
+
+  .end-emoji { font-size: 4rem; margin-bottom: 10px; }
+  .end-title { font-family: 'Amiri', serif; font-size: 2rem; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+  .end-score { font-size: 3rem; font-weight: 900; color: var(--text); margin: 10px 0; }
+  .end-comment { color: #8899bb; font-size: 0.95rem; margin-bottom: 24px; }
+
+  .restart-btn {
+    background: linear-gradient(135deg, var(--gold), #f0a500);
+    color: #0d1b2a;
+    border: none;
+    padding: 13px 40px;
+    border-radius: 50px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { transform: translateY(-2px) scale(1.02); }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 10px; height: 10px;
+    pointer-events: none;
+    border-radius: 2px;
+    animation: confetti-fall 1.5s ease-out forwards;
+    z-index: 9999;
+  }
+  @keyframes confetti-fall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Mobile */
+  @media(max-width: 520px) {
+    .choice-btns { grid-template-columns: 1fr; }
+    .drag-targets { grid-template-columns: 1fr; }
+    .ref-cols { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-main">🌟 لعبة الناسخة 🌟</div>
+  <div class="title-sub">الأفعال الناسخة والحروف الناسخة – الصف الخامس الأساسي</div>
+</header>
+
+<!-- Score -->
+<div class="score-bar">
+  <div class="score-pill">🟢 أفعال ناسخة: <span class="verb-s" id="verbScore">0</span></div>
+  <div class="score-pill">🟣 حروف ناسخة: <span class="particle-s" id="partScore">0</span></div>
+  <div class="score-pill">⭐ الإجمالي: <span class="total-s" id="totalScore">0</span></div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item verb"><div class="legend-dot"></div> فعل ناسخ (كان وأخواتها)</div>
+  <div class="legend-item particle"><div class="legend-dot"></div> حرف ناسخ (إن وأخواتها)</div>
+</div>
+
+<!-- Reference table -->
+<button class="ref-toggle" onclick="toggleRef()">📖 عرض/إخفاء جدول الناسخة</button>
+<div class="ref-table" id="refTable">
+  <div class="ref-cols">
+    <div class="ref-col v">
+      <h4>🟢 الأفعال الناسخة (كان وأخواتها)</h4>
+      <div class="words">
+        <span class="ref-word">كانَ</span><span class="ref-word">أَصبَحَ</span><span class="ref-word">أَمسى</span>
+        <span class="ref-word">أَضحى</span><span class="ref-word">ظَلَّ</span><span class="ref-word">بَاتَ</span>
+        <span class="ref-word">صارَ</span><span class="ref-word">لَيسَ</span><span class="ref-word">مَا زَالَ</span>
+        <span class="ref-word">مَا بَرِحَ</span><span class="ref-word">مَا فَتِئَ</span><span class="ref-word">مَا انفَكَّ</span>
+      </div>
+    </div>
+    <div class="ref-col p">
+      <h4>🟣 الحروف الناسخة (إن وأخواتها)</h4>
+      <div class="words">
+        <span class="ref-word">إِنَّ</span><span class="ref-word">أَنَّ</span><span class="ref-word">كَأَنَّ</span>
+        <span class="ref-word">لَكِنَّ</span><span class="ref-word">لَيتَ</span><span class="ref-word">لَعَلَّ</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+</div>
+
+<!-- Mode selector -->
+<div class="game-container">
+  <div class="mode-selector">
+    <button class="mode-btn active" onclick="setMode('classify')">🎯 صنِّف الكلمة</button>
+    <button class="mode-btn" onclick="setMode('drag')">🖐 رتِّب بالسحب</button>
+    <button class="mode-btn" onclick="setMode('fill')">✍️ أكمل الجملة</button>
+  </div>
+
+  <!-- MODE 1: Classify -->
+  <div class="classify-game active" id="classifyGame">
+    <div class="question-card" id="classCard">
+      <div class="question-label">ما نوع هذه الكلمة؟</div>
+      <div class="question-word" id="classWord">كانَ</div>
+      <div class="question-sentence" id="classSentence"></div>
+    </div>
+    <div class="feedback-msg" id="classFeedback"></div>
+    <div class="choice-btns">
+      <button class="choice-btn verb" onclick="classify('verb')">🟢 فعل ناسخ</button>
+      <button class="choice-btn particle" onclick="classify('particle')">🟣 حرف ناسخ</button>
+    </div>
+    <button class="next-btn" id="classNext" onclick="nextClassify()">التالي ▶</button>
+  </div>
+
+  <!-- MODE 2: Drag -->
+  <div class="drag-game" id="dragGame">
+    <p class="drag-instruction">اسحب كل كلمة إلى المجموعة الصحيحة</p>
+    <div class="drag-words-pool" id="dragPool" ondragover="poolDragOver(event)" ondrop="poolDrop(event)"></div>
+    <div class="drag-targets">
+      <div class="drag-target verb-zone" ondragover="dragOver(event)" ondrop="drop(event,'verb')">
+        <h3>🟢 أفعال ناسخة</h3>
+        <div class="words-inside" id="verbZone"></div>
+      </div>
+      <div class="drag-target particle-zone" ondragover="dragOver(event)" ondrop="drop(event,'particle')">
+        <h3>🟣 حروف ناسخة</h3>
+        <div class="words-inside" id="partZone"></div>
+      </div>
+    </div>
+    <button class="drag-check-btn" onclick="checkDrag()">✅ تحقق من الإجابة</button>
+  </div>
+
+  <!-- MODE 3: Fill -->
+  <div class="fill-game" id="fillGame">
+    <div class="fill-sentence-card" id="fillCard">
+      <div class="fill-sentence" id="fillSent"></div>
+      <div class="fill-options" id="fillOpts"></div>
+    </div>
+    <div class="feedback-msg" id="fillFeedback"></div>
+    <button class="next-btn" id="fillNext" onclick="nextFill()">التالي ▶</button>
+  </div>
+
+  <!-- End screen -->
+  <div class="end-screen" id="endScreen">
+    <div class="end-emoji" id="endEmoji">🏆</div>
+    <div class="end-title">أحسنتَ!</div>
+    <div class="end-score" id="endScoreText"></div>
+    <div class="end-comment" id="endComment"></div>
+    <button class="restart-btn" onclick="restart()">🔄 العب مجدداً</button>
+  </div>
+</div>
+
+<script>
+// ============ DATA ============
+const VERBS = ['كانَ','أصبَحَ','أمسى','أضحى','ظَلَّ','باتَ','صارَ','لَيسَ','ما زالَ','ما بَرِحَ','ما فَتِئَ','ما انفَكَّ'];
+const PARTICLES = ['إنَّ','أنَّ','كأنَّ','لكنَّ','لَيتَ','لَعَلَّ'];
+
+const classifyData = [
+  { word:'كانَ', type:'verb', sentence:'كانَ الجوُّ صحواً جميلاً' },
+  { word:'إنَّ', type:'particle', sentence:'إنَّ العلمَ نورٌ يضيء العقول' },
+  { word:'أصبَحَ', type:'verb', sentence:'أصبَحَ الطالبُ متفوقاً في دراسته' },
+  { word:'لَعَلَّ', type:'particle', sentence:'لَعَلَّ المطرَ يهطلُ اليومَ' },
+  { word:'صارَ', type:'verb', sentence:'صارَ الطفلُ طبيباً ناجحاً' },
+  { word:'لَيتَ', type:'particle', sentence:'لَيتَ الأيامَ تعودُ كما كانت' },
+  { word:'لَيسَ', type:'verb', sentence:'لَيسَ الغنى كثرةَ المال' },
+  { word:'كأنَّ', type:'particle', sentence:'كأنَّ القمرَ بدرٌ في السماء' },
+  { word:'ظَلَّ', type:'verb', sentence:'ظَلَّ العاملُ مجتهداً طوال اليوم' },
+  { word:'أنَّ', type:'particle', sentence:'علمتُ أنَّ الصدقَ فضيلةٌ عظيمة' },
+  { word:'باتَ', type:'verb', sentence:'باتَ الحارسُ يقظاً طوالَ الليل' },
+  { word:'لكنَّ', type:'particle', sentence:'الجوُّ حارٌّ لكنَّ الهواءَ منعشٌ' },
+  { word:'أمسى', type:'verb', sentence:'أمسى النجمُ لامعاً في السماء' },
+  { word:'ما زالَ', type:'verb', sentence:'ما زالَ القمرُ ساطعاً في الليل' },
+  { word:'أضحى', type:'verb', sentence:'أضحى المسجدُ مكاناً للعبادة' },
+];
+
+const fillData = [
+  { before:'', blank:'', after:'الطالبُ نشيطاً', correct:'كانَ', options:['كانَ','إنَّ','لَيتَ'], type:'verb' },
+  { before:'', blank:'', after:'العلمَ نافعٌ', correct:'إنَّ', options:['إنَّ','صارَ','باتَ'], type:'particle' },
+  { before:'', blank:'', after:'الحديقةُ بستاناً مزهراً', correct:'أصبَحَت', options:['أصبَحَت','لَعَلَّ','كأنَّ'], type:'verb' },
+  { before:'', blank:'', after:'المطرَ يهطلُ غداً', correct:'لَعَلَّ', options:['لَعَلَّ','كانَ','ظَلَّ'], type:'particle' },
+  { before:'', blank:'', after:'السماءُ صافيةً طوالَ اليوم', correct:'ظَلَّت', options:['ظَلَّت','لَيتَ','أنَّ'], type:'verb' },
+  { before:'', blank:'', after:'الأيامَ الجميلةَ تعود', correct:'لَيتَ', options:['لَيتَ','أصبَحَ','لَيسَ'], type:'particle' },
+  { before:'', blank:'', after:'الحقُّ واضحاً', correct:'لَيسَ', options:['لَيسَ','إنَّ','كأنَّ'], type:'verb' },
+  { before:'', blank:'', after:'القمرَ بدرٌ ساطع', correct:'كأنَّ', options:['كأنَّ','صارَ','باتَ'], type:'particle' },
+  { before:'', blank:'', after:'الطفلُ رجلاً كريماً', correct:'صارَ', options:['صارَ','لكنَّ','لَعَلَّ'], type:'verb' },
+  { before:'علمنا ', blank:'', after:'الصدقَ أساسُ النجاح', correct:'أنَّ', options:['أنَّ','ظَلَّ','كانَ'], type:'particle' },
+];
+
+// State
+let mode = 'classify';
+let classIdx = 0;
+let classOrder = [];
+let fillIdx = 0;
+let fillOrder = [];
+let verbScore = 0, partScore = 0, totalScore = 0;
+let totalQuestions = 0, currentCorrect = 0;
+let dragData = {};
+let answered = false;
+
+function init() {
+  classOrder = shuffle([...classifyData]);
+  fillOrder = shuffle([...fillData]);
+  classIdx = 0; fillIdx = 0;
+  verbScore = 0; partScore = 0; totalScore = 0;
+  totalQuestions = 0; currentCorrect = 0;
+  updateScores();
+  setupDrag();
+  loadClassify();
+  loadFill();
+}
+
+function shuffle(arr) {
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// ===== MODE SWITCH =====
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach((b,i)=>{
+    const modes=['classify','drag','fill'];
+    b.classList.toggle('active', modes[i]===m);
+  });
+  document.querySelectorAll('.classify-game,.drag-game,.fill-game').forEach(el=>el.classList.remove('active'));
+  document.getElementById('endScreen').classList.remove('show');
+  if(m==='classify') document.getElementById('classifyGame').classList.add('active');
+  if(m==='drag') document.getElementById('dragGame').classList.add('active');
+  if(m==='fill') document.getElementById('fillGame').classList.add('active');
+}
+
+// ===== CLASSIFY MODE =====
+function loadClassify() {
+  if(classIdx >= classOrder.length) {
+    showEnd();
+    return;
+  }
+  const q = classOrder[classIdx];
+  document.getElementById('classWord').textContent = q.word;
+  document.getElementById('classSentence').innerHTML = q.sentence
+    ? 'في جملة: <span class="highlight">' + q.sentence + '</span>'
+    : '';
+  document.getElementById('classFeedback').textContent = '';
+  document.getElementById('classFeedback').className = 'feedback-msg';
+  document.getElementById('classNext').classList.remove('show');
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = false);
+  updateProgress(classIdx, classOrder.length);
+  answered = false;
+}
+
+function classify(choice) {
+  if(answered) return;
+  answered = true;
+  const q = classOrder[classIdx];
+  const correct = q.type === choice;
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+
+  if(correct) {
+    document.getElementById('classFeedback').textContent = '✅ أحسنتَ! إجابة صحيحة';
+    document.getElementById('classFeedback').className = 'feedback-msg correct';
+    const btn = choice==='verb' ? btns[0] : btns[1];
+    btn.classList.add('correct-ans');
+    addScore(q.type);
+    spawnConfetti();
+  } else {
+    document.getElementById('classFeedback').textContent = '❌ حاولْ مرة أخرى! الإجابة: ' + (q.type==='verb'?'فعل ناسخ':'حرف ناسخ');
+    document.getElementById('classFeedback').className = 'feedback-msg wrong';
+    const wrongBtn = choice==='verb' ? btns[0] : btns[1];
+    wrongBtn.classList.add('wrong-ans');
+  }
+  document.getElementById('classNext').classList.add('show');
+}
+
+function nextClassify() {
+  classIdx++;
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.classList.remove('correct-ans','wrong-ans');
+  });
+  loadClassify();
+}
+
+// ===== DRAG MODE =====
+function setupDrag() {
+  const sample = shuffle([...VERBS]).slice(0,5).concat(shuffle([...PARTICLES]).slice(0,4));
+  shuffle(sample);
+  const pool = document.getElementById('dragPool');
+  document.getElementById('verbZone').innerHTML = '';
+  document.getElementById('partZone').innerHTML = '';
+  pool.innerHTML = '';
+  dragData = {};
+
+  sample.forEach(w => {
+    dragData[w] = VERBS.includes(w) ? 'verb' : 'particle';
+    const el = document.createElement('div');
+    el.className = 'drag-word';
+    el.textContent = w;
+    el.draggable = true;
+    el.dataset.word = w;
+    el.addEventListener('dragstart', dragStart);
+    el.addEventListener('dragend', dragEnd);
+    pool.appendChild(el);
+  });
+}
+
+let draggingEl = null;
+function dragStart(e) {
+  draggingEl = e.target;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function dragEnd(e) { e.target.classList.remove('dragging'); }
+
+function dragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('over');
+}
+function drop(e, zone) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  if(!draggingEl) return;
+  const w = draggingEl.dataset.word;
+  const placed = document.createElement('div');
+  placed.className = 'placed-word';
+  placed.textContent = w;
+  placed.draggable = true;
+  placed.dataset.word = w;
+  placed.dataset.zone = zone;
+  placed.addEventListener('dragstart', dragStart);
+  placed.addEventListener('dragend', dragEnd);
+  const inside = document.getElementById(zone==='verb'?'verbZone':'partZone');
+  inside.appendChild(placed);
+  draggingEl.remove();
+  draggingEl = null;
+}
+function poolDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('over'); }
+function poolDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  if(!draggingEl) return;
+  const el = document.createElement('div');
+  el.className = 'drag-word';
+  el.textContent = draggingEl.dataset.word;
+  el.draggable = true;
+  el.dataset.word = draggingEl.dataset.word;
+  el.addEventListener('dragstart', dragStart);
+  el.addEventListener('dragend', dragEnd);
+  document.getElementById('dragPool').appendChild(el);
+  draggingEl.remove();
+  draggingEl = null;
+}
+
+function checkDrag() {
+  const vWords = [...document.getElementById('verbZone').querySelectorAll('.placed-word')];
+  const pWords = [...document.getElementById('partZone').querySelectorAll('.placed-word')];
+  if(vWords.length + pWords.length < Object.keys(dragData).length * 0.5) {
+    alert('يرجى ترتيب كل الكلمات أولاً!');
+    return;
+  }
+  let correct = 0, total = vWords.length + pWords.length;
+  vWords.forEach(el => {
+    if(dragData[el.dataset.word]==='verb') { el.style.background='#1a6b3c'; correct++; }
+    else { el.style.background='#e74c3c'; }
+  });
+  pWords.forEach(el => {
+    if(dragData[el.dataset.word]==='particle') { el.style.background='#7b1fa2'; correct++; }
+    else { el.style.background='#e74c3c'; }
+  });
+  addScore('verb', Math.round(correct/2));
+  addScore('particle', Math.round(correct/2));
+  if(correct===total) spawnConfetti();
+  alert(`نتيجتك: ${correct} من ${total} ✅`);
+  setTimeout(()=>setupDrag(), 2000);
+}
+
+// ===== FILL MODE =====
+function loadFill() {
+  if(fillIdx >= fillOrder.length) { showEnd(); return; }
+  const q = fillOrder[fillIdx];
+  document.getElementById('fillSent').innerHTML =
+    '<span class="fill-blank">___</span> ' + q.after;
+  const opts = shuffle([...q.options]);
+  const container = document.getElementById('fillOpts');
+  container.innerHTML = '';
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'fill-opt';
+    btn.textContent = opt;
+    btn.onclick = () => selectFill(btn, opt, q);
+    container.appendChild(btn);
+  });
+  document.getElementById('fillFeedback').textContent = '';
+  document.getElementById('fillNext').classList.remove('show');
+  updateProgress(fillIdx, fillOrder.length);
+}
+
+function selectFill(btn, chosen, q) {
+  document.querySelectorAll('.fill-opt').forEach(b => b.onclick=null);
+  if(chosen === q.correct) {
+    btn.classList.add('correct');
+    document.getElementById('fillFeedback').textContent = '✅ ممتاز!';
+    document.getElementById('fillFeedback').className = 'feedback-msg correct';
+    addScore(q.type);
+    spawnConfetti();
+    document.getElementById('fillSent').innerHTML =
+      '<span style="color:var(--gold);font-weight:700">' + q.correct + '</span> ' + q.after;
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.fill-opt').forEach(b => {
+      if(b.textContent===q.correct) b.classList.add('correct-answer');
+    });
+    document.getElementById('fillFeedback').textContent = '❌ الإجابة: ' + q.correct;
+    document.getElementById('fillFeedback').className = 'feedback-msg wrong';
+  }
+  document.getElementById('fillNext').classList.add('show');
+}
+
+function nextFill() { fillIdx++; loadFill(); }
+
+// ===== SCORES =====
+function addScore(type, amt=1) {
+  if(type==='verb') verbScore+=amt;
+  else if(type==='particle') partScore+=amt;
+  totalScore++;
+  updateScores();
+}
+
+function updateScores() {
+  document.getElementById('verbScore').textContent = verbScore;
+  document.getElementById('partScore').textContent = partScore;
+  document.getElementById('totalScore').textContent = totalScore;
+}
+
+function updateProgress(current, total) {
+  const pct = total > 0 ? (current / total) * 100 : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+// ===== END =====
+function showEnd() {
+  document.querySelectorAll('.classify-game,.drag-game,.fill-game').forEach(el=>el.classList.remove('active'));
+  const end = document.getElementById('endScreen');
+  end.classList.add('show');
+  const total = classOrder.length + fillOrder.length;
+  const pct = Math.round((totalScore/Math.max(total,1))*100);
+  document.getElementById('endScoreText').textContent = totalScore + ' نقطة';
+  const emoji = pct>=80?'🏆':pct>=60?'🌟':'💪';
+  document.getElementById('endEmoji').textContent = emoji;
+  const comment = pct>=80?'أداء رائع! أنتَ متقن للناسخة':pct>=60?'جيد جداً! استمر في التدريب':'حاول مرة أخرى، أنتَ قادر!';
+  document.getElementById('endComment').textContent = comment;
+  spawnConfetti(30);
+}
+
+function restart() {
+  document.getElementById('endScreen').classList.remove('show');
+  init();
+  setMode('classify');
+  document.querySelectorAll('.mode-btn')[0].click();
+}
+
+// ===== HELPERS =====
+function toggleRef() {
+  document.getElementById('refTable').classList.toggle('open');
+}
+
+function spawnConfetti(count=12) {
+  const colors = ['#f4d03f','#2ecc71','#ab47bc','#e74c3c','#3498db'];
+  for(let i=0;i<count;i++) {
+    setTimeout(()=>{
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `
+        left:${Math.random()*100}vw;
+        top:-20px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        transform:rotate(${Math.random()*360}deg);
+        animation-duration:${1+Math.random()}s;
+        animation-delay:${Math.random()*0.3}s;
+      `;
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),2000);
+    }, i*60);
+  }
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
